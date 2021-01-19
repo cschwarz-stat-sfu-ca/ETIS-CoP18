@@ -1,0 +1,352 @@
+---
+title: "Attempt to run the ETIS code"
+author: "Carl James Schwarz"
+date: '`r format(Sys.time(), "%Y-%m-%d")`'
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+  pdf_document:
+    keep_tex: false
+    number_sections: yes
+    toc: yes
+    fig_caption: true
+    extra_dependencies: ["float"]
+---
+
+# Preliminaries.
+
+Before running the *R* scripts for the ETIS analysis, you will need to set up
+an SQL server, populate a database to be accessed by the R scripts, install JAGS, etc.
+
+## Setup the ETIS database on your local machine.
+
+### Windoze local computer
+
+**To be provided later**
+
+### Macintosh local computer
+
+You must install a SQL server on your local computer and populate it with the ETIS records.
+This document uses the *Postgres.app* SQL server, but you could use any other server. Your install
+and population instructions will be similar.
+
+#### Download the Postgres.app
+ Download Postgres.app from https://www.postgresql.org/download/macosx/
+Install it on your local computer in the usual way. The installation will 
+create an icon (an elephant) in the mac menu bar on the top right
+
+#### Create a new database and populate it from the *.sql file of ETIS records.
+
+The `Postgres.app` will automatically create one or more sample databases (that are empty) when installed.
+
+##### Launch the application and start the *psql* application
+
+Click on any of the databases that are established to open the "psql" program in a terminal window.
+I clicked on the database called ``cschwarz` (your existing database may be different)
+The Terminal window should then read something like:
+
+```
+/Applications/Postgres.app/Contents/Versions/13/bin/psql -p5432 "cschwarz"
+cschwarz@schwarz-iMac-2020 ~ % /Applications/Postgres.app/Contents/Versions/13/bin/psql -p5432 "cschwarz"
+psql (13.1)
+Type "help" for help.
+cschwarz=# 
+```
+Notice the `cschwarz=#` prompt indicated you are in the *psql* program.
+
+##### Create a NEW database to hold the ETIS records. 
+
+I will now create a new database (called `etis`) to hold the ETIS database using the `create` command
+
+```
+cschwarz=#   create database etis;
+CREATE DATABASE
+```
+
+
+##### Sign into the "etis" database.
+
+We now sign into the `etis` database. The "\" in the command below is important
+
+```
+cschwarz=# \c etis
+
+You are now connected to database "etis" as user "cschwarz".
+```
+
+
+
+
+##### Populate the new "etis" database 
+We will now populate the `etis` database by importing the contents of the the *.sql file. 
+See https://stackoverflow.com/questions/53245701/import-sql-file-into-postgres-using-psql for additional details.
+
+Notice that the prompt below will have changed from `cschwarz=#` to `etis=#`. 
+The path name to the *sql file will differ from the path below. 
+I would drag and drop the file into the terminal window to get the full path name rather than typing it from scratch.
+
+```
+etis=# \i /Users/cschwarz/Dropbox/etis_production_06_06_2018.sql 
+```
+
+
+You will now get many lines of output as the `etis` database is populated from the *.sql file.
+I've shown the first few and last few output lines below:
+
+```
+SET
+SET
+SET
+...
+CREATE EXTENSION
+...
+CREATE TABLE
+```
+
+
+##### Exit the database and the `psql` program
+
+Exit from the database and `psql` program
+
+```
+etis=# \q
+```
+
+
+#### Accessing the your `etis` database from *R*
+
+Be sure that the `Postgres.app` is running (click on the elephant in the menu bar) 
+and that it is "started" (there is a button when you open the application).
+
+Within your R script, use
+
+```
+host.name <- 'localhost'
+pg.port <- 5432
+user.name <- 'postgres'
+db.name <- 'etis'
+```
+
+before connecting to the database. Happy SQLing!
+
+## JAGS install
+
+JAGS is a program that performs the Bayesian Analysis. It is called from *R*
+but is not an *R* package and must be installed separately.
+
+**Provide instructions here on how to do this **
+
+
+# Producing the CoP18 ETIS results
+
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+# Problems encountered: Code runs but need modification for your local machine
+source(file.path("R","PG settings.R"))
+
+# I had to change the code to:
+host.name <- 'localhost'
+pg.port <- 5432
+user.name <- 'postgres'
+# 
+# If a password is required, enter it between the quote marks here:
+passwd <- 'XXXX'
+#
+# ... then set the database name:
+db.name <- 'etis'
+
+```
+
+Create a directory *ProcessedData*, *JAGS Summaries* and *2018 JAGS MCMCoutputs* to store intermediate results
+and modify the paths below to point to these directories.
+
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+# Problems encountered:
+# (a). This code didn't run directly because it sets a working directory using static paths.
+# this likely needs to be changed. I would move the setting of paths into a separate script and
+# source that script so it done once for all scripts rather than modifying the code in every script.
+# (b) Code needs to be repaired to use file.path(directory,file) to make it system independent etc.
+# (c) people will miss that code needs to be run twice. Be explicit
+# (d) Remov year.from and year.to from the files.
+
+base.dir <- '/Users/cschwarz/Dropbox/00-current-tasks/2020-12-Mike-Elephants/ETIS_CITESReporting_RCode-v.CoP18_CS'
+
+path.Rcode    <- file.path(base.dir, "R"             )   
+path.data     <- file.path(base.dir, "ProcessedData" )
+path.wkg      <- file.path(base.dir, "ProcessedData" )
+path.out.sum  <- file.path(base.dir, "JAGS summaries")
+path.out.mcmc <- file.path(base.dir, "2018 JAGS MCMCoutputs")
+
+# 2. Need to launch the SQL server in the back ground.
+
+# need to run the following file twice
+year.from <- 1900
+year.to   <- 2100
+source(file.path(path.Rcode,"Sz data setup.R"))
+
+year.from <- 2007
+year.to   <- 2017
+source(file.path(path.Rcode,"Sz data setup.R"))
+```
+
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+# Problems encountered:
+
+source(file.path(path.Rcode,"Sz id weights changed.R"))
+```
+
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+# Problems encountered:
+# (0) You also need to run the model.development first because it creates Rdata files.
+# (a) this needs to be run before "wgt est.R" because  "wgt est.R" loads "wt est.Rdata" which is created by this code
+# (b) Comment out the R and ProcessData paths. The path names are different here? Why?
+# (c) Wants the file "'ivory sz recs 1900_2100.csv'" and not clear where this is created?
+# (d) Change path.wkg to path.data or set it equal.
+# (e) Need to add _tidy to csv file names created in previous program
+# (f) Set the par(ask=FALSE) so code does not prompt to show the plots
+
+par(ask=FALSE)
+source(file.path(path.Rcode,"wgt est models development.R"))
+```
+
+
+
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+# Problems encountered:
+# (a) this needs to be run before "wgt est.R" because  "wgt est.R" loads "wt est.Rdata" which is created by this code
+# (b) Comment out the R and ProcessData paths. The path names are different here? Why?
+# (c) Wants the file "'ivory sz recs 1900_2100.csv'" and not clear where this is created?
+# (d) Change path.wkg to path.data or set it equal.
+# (e) Need to add _tidy to csv file names created in previous program
+source(file.path(path.Rcode,"wgt est models.R"))
+```
+
+
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+# Problems encountered:
+# (a) Comment out the R and Processed data paths. see previous note.
+# (b) Similarly, the year.to and year.from should be commented out and again set in another source file once for all code scripts
+# (c) Need to adjust the file path for reading in the created ivory data
+# (d) avoid T/F for TRUE/FALSE
+# (e) wanted load('wt est.Rdata') but this doesn't exist yet. Created by "wgt est models.R" which needs to be run first.
+
+source(file.path(path.Rcode,"Wgt est.R"))
+```
+
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+# Problems encountered:
+# missing from GitHub sites?
+
+#source(file.path(path.Rcode,"Wgt est models comparison.R"))   
+
+```
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+# Problems encountered:
+# (a) changed file name to sz.. from Sz
+# (b) commented out year.from and year.to as set previously.
+# (c) file paths set outside code block
+# (d) Changes year.to and year.from to 2008 to 2017. Next code block calls this year.crit.to year.crit.from
+
+source(file.path(path.Rcode,"sz_inout_tables_df_gps_transit.R"))   
+
+```
+
+
+
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+# Problems encountered:
+# (a) changed file name to sz.. from Sz
+# (b) commented out year.from and year.to as set previously
+#     ditto for year.crit.to and year.crit.from.
+# (c) file paths set outside code block
+# (d) csv files have _tidy suffix that needs to be added.
+# (e) dplyr:: added to select
+# (f) mutate problem as seen by earlier
+
+source(file.path(path.Rcode,"sz datasets_ALL gps.R"))   
+
+```
+
+
+
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+#  R script that shows interpolation/assumptions of ETIS subsidiary database to calculate
+#  covariates (missing)  3
+
+```
+
+
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+# Problems encountered:
+# (a) year.to and year.from commented out since set outside code
+# (a) path name commented out since outside code
+# (b) update path name to country names
+
+source(file.path(path.Rcode,"Covar setup.R"))   
+
+```
+
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+# Problems encountered:
+# (a) year.to and year.from commented out since set outside code
+# (a) path name commented out since outside code
+# (b) update path name to country names
+
+#source(file.path(path.Rcode,"Trade route calculation.R"))   
+# there is still a problem with mutate that needs to be resolved.
+
+```
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+#14.  Checking seizure records (This file can’t be run because it compares records used in
+#2017 Standing committee analysis. File 2007-2016 szs_ALL_ddmmyyyy.csv was not
+#provided)
+#15.  Checking covariates.R (This file can’t be run because it compares records used in 2017
+#Standing committee analysis. File with past covariates – “covars_ddmmyyyy.csv” was not
+#provided)
+
+```
+
+
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+# Problems encountered:
+# (a) year.to and year.from commented out since set outside code
+# (a) path name commented out since outside code
+# (b) change year.to to year.crit.to etc
+# (d) updated file name for covars etc.
+
+source(file.path(path.Rcode,"Select final data.R"))   
+
+```
+
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+# Problems encountered:
+# (a) year.to and year.from commented out since set outside code
+# (a) path name commented out since outside code
+# (b) change year.to to year.crit.to etc
+# (d) updated file name for covars etc.
+# (e) JAVA problems... have to stop
+
+#source(file.path(path.Rcode,"sz_JAGS_model Final.R"))   # updated file name from Sz to sz
+
+```
+
+
+
+# code blocks yet to check out
+
+
+#18.  Sz model checking.R
+#19.  Raw wt_dist_jags.R
+#20.  Wkd wt_dist_jags.R
+#21.  Simulating raw weights.R
+#22.  Simulating wkd weights.R
+#23.  Covar setup_ALL_cluster.R
+#24.  Trade route Calculation_All.R
+#25.  Select covars cluster ALL.R
+#26.  Sx x rep rate for all countries for cluster analysis Final.R
+#27.  Sz_inout_tables_adj_sims.R
+#28.  Mult_ctries.R
+#29.  Multiple mentions all wtlimit sims.R
+#30.  Creating variables for cluster analysis sims Final.R
+#31.  Cluster Analysis sims Final 500.R
+
