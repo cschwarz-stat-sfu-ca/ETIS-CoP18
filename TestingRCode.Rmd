@@ -14,10 +14,25 @@ output:
     extra_dependencies: ["float"]
 ---
 
+# Things that need changing in general
+
+- Don't define the paths in each code fragment
+- Don't define year.to, year.from etc in each code fragment
+
+# THings to do in the future to improve code
+
+- Change all the `setwd` to use file.path and remove the actual change in working directory
+- Change all creation of file paths using paste(... set="\") to use file.path() command
+- Change all =T or =F to =TRUE and =FALSE
+- Change all hardcoding of the date run in a file name to use the global variable on the date run.
+- Change gdata::read.xls to readxl::read_excel() from the tidyverse package
+- Change XLconnect package to openxlsx to avoid using java
+
 # Preliminaries.
 
 Before running the *R* scripts for the ETIS analysis, you will need to set up
-an SQL server, populate a database to be accessed by the R scripts, install JAGS, etc.
+an SQL server, populate a database to be accessed by the R scripts, install JAGS, create directories
+to save the intermediate results, etc.
 
 ## Setup the ETIS database on your local machine.
 
@@ -137,8 +152,35 @@ but is not an *R* package and must be installed separately.
 
 **Provide instructions here on how to do this **
 
+## Create directories to hold intermediate results
+
+Create the following directories
+
+- *ProcessedData*
+- *JAGS summaries*
+- *2018 JAGS MCMCoutputs*
+
+Notice that spelling and case must match exactly.
+You will create a path to these directories at the start of the code sequence below.
+
+## Install R packages
+
+**GIve a list of R packages that need to be installed here**
+
+- *tidyverse*
+
+
+```{r eval=FALSE,include=FALSE}
+#################################################################################################
+#################################################################################################
+#################################################################################################
+#################################################################################################
+```
 
 # Producing the CoP18 ETIS results
+
+## Launch SQL server and point to the database created earlier.
+This is in the *PG settings.R* file.
 
 ```{r echo=TRUE, message=TRUE, warning=TRUE}
 # Problems encountered: Code runs but need modification for your local machine
@@ -157,8 +199,10 @@ db.name <- 'etis'
 
 ```
 
-Create a directory *ProcessedData*, *JAGS Summaries* and *2018 JAGS MCMCoutputs* to store intermediate results
-and modify the paths below to point to these directories.
+## Set path names
+
+Modify the path name for the  directories *ProcessedData*, *JAGS Summaries* and *2018 JAGS MCMCoutputs* 
+to store intermediate results below.
 
 ```{r echo=TRUE, message=TRUE, warning=TRUE}
 # Problems encountered:
@@ -169,17 +213,20 @@ and modify the paths below to point to these directories.
 # (c) people will miss that code needs to be run twice. Be explicit
 # (d) Remov year.from and year.to from the files.
 
-base.dir <- '/Users/cschwarz/Dropbox/00-current-tasks/2020-12-Mike-Elephants/ETIS_CITESReporting_RCode-v.CoP18_CS'
+base.dir <- '/Users/cschwarz/Dropbox/00-current-tasks/2020-12-Mike-Elephants/2021-01-31-ETIS_CITESReporting_RCode-v.CoP18_CS'
 
-path.Rcode    <- file.path(base.dir, "R"             )   
+path.Rcode    <- file.path(base.dir, "zzCodeToBeTested","R"             )   
 path.data     <- file.path(base.dir, "ProcessedData" )
 path.wkg      <- file.path(base.dir, "ProcessedData" )
 path.out.sum  <- file.path(base.dir, "JAGS summaries")
 path.out.mcmc <- file.path(base.dir, "2018 JAGS MCMCoutputs")
+```
 
-# 2. Need to launch the SQL server in the back ground.
+## Set up the data.
 
-# need to run the following file twice
+```{r echo=TRUE, message=TRUE, warning=TRUE}
+# You need to run this code fragment twice in the order given
+
 year.from <- 1900
 year.to   <- 2100
 source(file.path(path.Rcode,"Sz data setup.R"))
@@ -187,6 +234,10 @@ source(file.path(path.Rcode,"Sz data setup.R"))
 year.from <- 2007
 year.to   <- 2017
 source(file.path(path.Rcode,"Sz data setup.R"))
+
+# Set up the years for the ivory seizures
+#year.crit.from <- 2008
+#year.crit.to   <- 2017
 ```
 
 ```{r echo=TRUE, message=TRUE, warning=TRUE}
@@ -271,7 +322,9 @@ source(file.path(path.Rcode,"sz datasets_ALL gps.R"))
 
 ```{r echo=TRUE, message=TRUE, warning=TRUE}
 #  R script that shows interpolation/assumptions of ETIS subsidiary database to calculate
-#  covariates (missing)  3
+#  covariates 
+
+# This file is missing.  (missing)  3
 
 ```
 
@@ -331,7 +384,7 @@ source(file.path(path.Rcode,"Select final data.R"))
 ```
 
 
-
+```{r eval=FALSE}
 # code blocks yet to check out
 
 
@@ -349,4 +402,4 @@ source(file.path(path.Rcode,"Select final data.R"))
 #29.  Multiple mentions all wtlimit sims.R
 #30.  Creating variables for cluster analysis sims Final.R
 #31.  Cluster Analysis sims Final 500.R
-
+```
